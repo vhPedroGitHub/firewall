@@ -14,12 +14,40 @@ export function ApplyRule(arg1) {
   return window['go']['main']['AppService']['ApplyRule'](arg1);
 }
 
+export function ClearActiveProcesses() {
+  return window['go']['main']['AppService']['ClearActiveProcesses']();
+}
+
+export function ClearMonitoringEvents() {
+  return window['go']['main']['AppService']['ClearMonitoringEvents']();
+}
+
 export function CreateProfile(arg1) {
   return window['go']['main']['AppService']['CreateProfile'](arg1);
 }
 
+export function DisablePrompts() {
+  return window['go']['main']['AppService']['DisablePrompts']();
+}
+
+export function EnablePrompts() {
+  return window['go']['main']['AppService']['EnablePrompts']();
+}
+
+export function GetActiveProcesses() {
+  return window['go']['main']['AppService']['GetActiveProcesses']();
+}
+
 export function GetLogs(arg1) {
   return window['go']['main']['AppService']['GetLogs'](arg1);
+}
+
+export function GetMonitoringEvents() {
+  return window['go']['main']['AppService']['GetMonitoringEvents']();
+}
+
+export function GetMonitoringStatus() {
+  return window['go']['main']['AppService']['GetMonitoringStatus']();
 }
 
 export function GetStats() {
@@ -38,6 +66,18 @@ export function ListRules() {
   return window['go']['main']['AppService']['ListRules']();
 }
 
+export function PromptsEnabled() {
+  return window['go']['main']['AppService']['PromptsEnabled']();
+}
+
 export function RemoveRule(arg1) {
   return window['go']['main']['AppService']['RemoveRule'](arg1);
+}
+
+export function StartMonitoring() {
+  return window['go']['main']['AppService']['StartMonitoring']();
+}
+
+export function StopMonitoring() {
+  return window['go']['main']['AppService']['StopMonitoring']();
 }

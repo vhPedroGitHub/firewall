@@ -1,4 +1,4 @@
-module firewall
+module github.com/vhPedroGitHub/firewall
 
 go 1.22.5
 

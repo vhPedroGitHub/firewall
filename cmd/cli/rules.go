@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"firewall/internal/logging"
-	"firewall/internal/rules"
+	"github.com/vhPedroGitHub/firewall/internal/logging"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
 )
 
 var (

@@ -57,6 +57,10 @@ Backend storage uses Sqlite; CLI uses Cobra; GUI uses Wails with embedded web fr
   - Activate: `go run ./cmd/cli profiles activate --name work`
   - Export: `go run ./cmd/cli profiles export --name work --file work.json`
   - Import: `go run ./cmd/cli profiles import --file work.json`
+- Monitoring:
+  - Start: `go run ./cmd/cli monitor start` - begins monitoring connections and prompts for unknown apps
+  - Stop: `go run ./cmd/cli monitor stop` - stops connection monitoring
+  - Status: `go run ./cmd/cli monitor status` - shows whether monitoring is active
 - Version: `go run ./cmd/cli version`
 
 ### GUI Usage
@@ -67,14 +71,31 @@ Backend storage uses Sqlite; CLI uses Cobra; GUI uses Wails with embedded web fr
   - **Profiles tab**: create/activate profiles, manage configurations
   - **Statistics tab**: view traffic metrics, bandwidth usage
   - **Logs tab**: browse firewall events and audit trail
+  - **Monitoring controls**: start/stop connection monitoring with automatic allow/deny prompts
 - Configuration: Uses `firewall.json` if present, otherwise defaults (see `firewall.json.example`)
 
 ### Build
 
 - CLI: `go build -o firewall-cli ./cmd/cli`
-- GUI: `go build -o firewall-gui ./cmd/gui` (Note: Wails may require additional build steps for production)
+- GUI (development): `go build -o firewall-gui ./cmd/gui`
+- GUI (production): `wails build` - creates optimized executable in `build/bin/`
+
+## Connection Monitoring
+
+The firewall can actively monitor network connections and prompt users when applications attempt connections without existing rules:
+
+- **Windows**: Uses netstat polling (simplified implementation). Production would use Windows Filtering Platform (WFP) APIs.
+- **Linux**: Reads /proc/net/tcp and /proc/net/udp (simplified). Production would use netfilter/nfqueue hooks.
+- **User Prompts**: When unknown connection detected, displays OS-native dialog asking to allow/deny
+- **Auto-Rule Creation**: User decisions are automatically saved as permanent rules
+
+Note: Current monitoring implementation is polling-based. For production use with high traffic volumes, consider implementing:
+
+- Windows: WFP callout drivers for kernel-level connection detection
+- Linux: nfqueue with libnetfilter_queue for real-time packet inspection
 
 ## Next Steps
 
-1. Implement active connection monitoring to trigger allow/deny prompts (requires privileged network hooks)
-2. Update module path from `module firewall` to actual repository path
+1. ~~Implement active connection monitoring infrastructure~~ ✓ Complete
+2. ~~Update module path to actual repository path~~ ✓ Complete (github.com/vhPedroGitHub/firewall)
+3. Enhance monitoring with kernel-level hooks for production environments

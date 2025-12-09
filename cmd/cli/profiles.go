@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"firewall/internal/profiles"
+	"github.com/vhPedroGitHub/firewall/internal/profiles"
 )
 
 var (

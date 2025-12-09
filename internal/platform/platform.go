@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"runtime"
 
-	lin "firewall/internal/platform/linux"
-	win "firewall/internal/platform/windows"
-	"firewall/internal/rules"
+	lin "github.com/vhPedroGitHub/firewall/internal/platform/linux"
+	win "github.com/vhPedroGitHub/firewall/internal/platform/windows"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
 )
 
 // ApplyRule dispatches to the OS-specific adapter.

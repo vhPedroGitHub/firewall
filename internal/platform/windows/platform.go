@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"firewall/internal/rules"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
 )
 
 // ApplyRule applies a firewall rule using netsh advfirewall on Windows.

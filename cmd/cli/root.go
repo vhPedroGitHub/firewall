@@ -9,10 +9,10 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"firewall/internal/config"
-	"firewall/internal/logging"
-	"firewall/internal/profiles"
-	"firewall/internal/rules"
+	"github.com/vhPedroGitHub/firewall/internal/config"
+	"github.com/vhPedroGitHub/firewall/internal/logging"
+	"github.com/vhPedroGitHub/firewall/internal/profiles"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
 )
 
 var (

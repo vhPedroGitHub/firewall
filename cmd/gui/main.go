@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"fmt"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -11,12 +12,13 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 
-	"firewall/internal/app"
-	"firewall/internal/config"
-	"firewall/internal/logging"
-	"firewall/internal/profiles"
-	"firewall/internal/rules"
-	"firewall/internal/stats"
+	"github.com/vhPedroGitHub/firewall/internal/app"
+	"github.com/vhPedroGitHub/firewall/internal/config"
+	"github.com/vhPedroGitHub/firewall/internal/logging"
+	"github.com/vhPedroGitHub/firewall/internal/monitor"
+	"github.com/vhPedroGitHub/firewall/internal/profiles"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
+	"github.com/vhPedroGitHub/firewall/internal/stats"
 )
 
 //go:embed all:frontend/dist
@@ -84,6 +86,7 @@ type AppService struct {
 	ctx          context.Context
 	Service      app.Service
 	profileStore profiles.Store
+	monitorSvc   *monitor.Service
 }
 
 func (a *AppService) startup(ctx context.Context) {
@@ -130,4 +133,113 @@ func (a *AppService) GetStatsFiltered(filter stats.Filter) []stats.ConnectionSta
 
 func (a *AppService) GetLogs(filepath string) ([]logging.Event, error) {
 	return logging.ReadEvents(filepath)
+}
+
+func (a *AppService) StartMonitoring() error {
+	if a.monitorSvc == nil {
+		var err error
+		a.monitorSvc, err = monitor.NewService(a.Service.Store)
+		if err != nil {
+			return fmt.Errorf("failed to create monitor service: %w", err)
+		}
+	}
+	return a.monitorSvc.Start()
+}
+
+func (a *AppService) StopMonitoring() error {
+	if a.monitorSvc == nil {
+		return fmt.Errorf("monitor service not initialized")
+	}
+	return a.monitorSvc.Stop()
+}
+
+func (a *AppService) GetMonitoringStatus() bool {
+	if a.monitorSvc == nil {
+		return false
+	}
+	return a.monitorSvc.IsRunning()
+}
+
+func (a *AppService) GetMonitoringEvents() []monitor.ConnectionEventLog {
+	if a.monitorSvc == nil {
+		return []monitor.ConnectionEventLog{}
+	}
+	return a.monitorSvc.GetRecentEvents()
+}
+
+func (a *AppService) ClearMonitoringEvents() error {
+	if a.monitorSvc == nil {
+		return fmt.Errorf("monitor service not initialized")
+	}
+	a.monitorSvc.ClearEvents()
+	return nil
+}
+
+func (a *AppService) EnablePrompts() error {
+	if a.monitorSvc == nil {
+		return fmt.Errorf("monitor service not initialized")
+	}
+	a.monitorSvc.EnablePrompts()
+	return nil
+}
+
+func (a *AppService) DisablePrompts() error {
+	if a.monitorSvc == nil {
+		return fmt.Errorf("monitor service not initialized")
+	}
+	a.monitorSvc.DisablePrompts()
+	return nil
+}
+
+func (a *AppService) PromptsEnabled() bool {
+	if a.monitorSvc == nil {
+		return false
+	}
+	return a.monitorSvc.PromptsEnabled()
+}
+
+func (a *AppService) GetActiveProcesses() []monitor.ConnectionEvent {
+	if a.monitorSvc == nil {
+		return []monitor.ConnectionEvent{}
+	}
+	return a.monitorSvc.GetActiveProcesses()
+}
+
+func (a *AppService) ClearActiveProcesses() error {
+	if a.monitorSvc == nil {
+		return fmt.Errorf("monitor service not initialized")
+	}
+	a.monitorSvc.ClearActiveProcesses()
+	return nil
+}
+
+func (a *AppService) GetProcessTraffic() []monitor.ProcessTraffic {
+	if a.monitorSvc == nil {
+		return []monitor.ProcessTraffic{}
+	}
+	return a.monitorSvc.GetProcessTraffic()
+}
+
+func (a *AppService) ClearProcessTraffic() error {
+	if a.monitorSvc == nil {
+		return fmt.Errorf("monitor service not initialized")
+	}
+	a.monitorSvc.ClearProcessTraffic()
+	return nil
+}
+
+// GetTopApplications returns the top N applications by data transferred.
+func (a *AppService) GetTopApplications(n int) []struct {
+	App        string
+	BytesSent  int64
+	BytesRecv  int64
+	TotalBytes int64
+} {
+	return stats.GetTopApplications(n)
+}
+
+// ClearStats clears all statistics.
+func (a *AppService) ClearStats() error {
+	stats.Clear()
+	return nil
 }

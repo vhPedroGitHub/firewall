@@ -5,7 +5,7 @@ package linux
 import (
 	"fmt"
 
-	"firewall/internal/rules"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
 )
 
 func ApplyRule(r rules.Rule) error {

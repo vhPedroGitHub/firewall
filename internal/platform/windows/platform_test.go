@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"firewall/internal/rules"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
 )
 
 func TestApplyRule_CommandGeneration(t *testing.T) {
@@ -90,10 +90,10 @@ func TestApplyRule_CommandGeneration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := buildNetshArgs(tt.rule)
-			
+
 			// Verify key arguments are present
 			cmdStr := strings.Join(args, " ")
-			
+
 			for _, want := range tt.wantArgs {
 				if !strings.Contains(cmdStr, want) {
 					t.Errorf("command missing expected arg %q\nfull command: %s", want, cmdStr)

@@ -325,3 +325,154 @@ func TestGlobalCollector(t *testing.T) {
 		t.Error("did not find expected global-test stat in global collector")
 	}
 }
+
+func TestCollector_Clear(t *testing.T) {
+	c := NewCollector()
+
+	// Record some stats
+	c.Record(ConnectionStat{
+		Timestamp:   time.Now(),
+		Application: "test.exe",
+		Protocol:    "tcp",
+		Direction:   "outbound",
+		BytesSent:   1024,
+		BytesRecv:   512,
+		Action:      "allow",
+	})
+
+	// Verify stats exist
+	results := c.Query(Filter{})
+	if len(results) != 1 {
+		t.Errorf("Expected 1 stat, got %d", len(results))
+	}
+
+	// Clear stats
+	c.Clear()
+
+	// Verify stats cleared
+	results = c.Query(Filter{})
+	if len(results) != 0 {
+		t.Errorf("Expected 0 stats after clear, got %d", len(results))
+	}
+}
+
+func TestGetTopApplications(t *testing.T) {
+	// Clear default collector
+	Clear()
+
+	// Record stats for different applications
+	Record(ConnectionStat{
+		Timestamp:   time.Now(),
+		Application: "app1.exe",
+		Protocol:    "tcp",
+		Direction:   "outbound",
+		BytesSent:   5000,
+		BytesRecv:   3000,
+		Action:      "allow",
+	})
+
+	Record(ConnectionStat{
+		Timestamp:   time.Now(),
+		Application: "app2.exe",
+		Protocol:    "tcp",
+		Direction:   "outbound",
+		BytesSent:   2000,
+		BytesRecv:   1000,
+		Action:      "allow",
+	})
+
+	Record(ConnectionStat{
+		Timestamp:   time.Now(),
+		Application: "app1.exe",
+		Protocol:    "tcp",
+		Direction:   "inbound",
+		BytesSent:   1000,
+		BytesRecv:   500,
+		Action:      "allow",
+	})
+
+	// Get top 2 applications
+	topApps := GetTopApplications(2)
+
+	if len(topApps) != 2 {
+		t.Errorf("Expected 2 top apps, got %d", len(topApps))
+	}
+
+	// First should be app1.exe with most data
+	if topApps[0].App != "app1.exe" {
+		t.Errorf("Expected app1.exe as top app, got %s", topApps[0].App)
+	}
+
+	expectedTotal := int64(9500)
+	if topApps[0].TotalBytes != expectedTotal {
+		t.Errorf("Expected %d total bytes for app1.exe, got %d", expectedTotal, topApps[0].TotalBytes)
+	}
+
+	// Second should be app2.exe
+	if topApps[1].App != "app2.exe" {
+		t.Errorf("Expected app2.exe as second app, got %s", topApps[1].App)
+	}
+
+	expectedTotal2 := int64(3000)
+	if topApps[1].TotalBytes != expectedTotal2 {
+		t.Errorf("Expected %d total bytes for app2.exe, got %d", expectedTotal2, topApps[1].TotalBytes)
+	}
+}
+
+func TestSnapshot_WithAllowedAndDenied(t *testing.T) {
+	c := NewCollector()
+
+	// Record mixed stats
+	c.Record(ConnectionStat{
+		Timestamp:   time.Now(),
+		Application: "app1.exe",
+		Protocol:    "tcp",
+		Direction:   "outbound",
+		BytesSent:   1000,
+		BytesRecv:   500,
+		Action:      "allow",
+	})
+
+	c.Record(ConnectionStat{
+		Timestamp:   time.Now(),
+		Application: "app2.exe",
+		Protocol:    "tcp",
+		Direction:   "inbound",
+		BytesSent:   2000,
+		BytesRecv:   1000,
+		Action:      "deny",
+	})
+
+	c.Record(ConnectionStat{
+		Timestamp:   time.Now(),
+		Application: "app3.exe",
+		Protocol:    "udp",
+		Direction:   "outbound",
+		BytesSent:   500,
+		BytesRecv:   250,
+		Action:      "allow",
+	})
+
+	// Get snapshot
+	snapshot := c.Snapshot()
+
+	if snapshot["total_connections"] != 3 {
+		t.Errorf("Expected 3 total connections, got %d", snapshot["total_connections"])
+	}
+
+	if snapshot["total_bytes_sent"] != 3500 {
+		t.Errorf("Expected 3500 total bytes sent, got %d", snapshot["total_bytes_sent"])
+	}
+
+	if snapshot["total_bytes_recv"] != 1750 {
+		t.Errorf("Expected 1750 total bytes recv, got %d", snapshot["total_bytes_recv"])
+	}
+
+	if snapshot["connections_allowed"] != 2 {
+		t.Errorf("Expected 2 allowed connections, got %d", snapshot["connections_allowed"])
+	}
+
+	if snapshot["connections_denied"] != 1 {
+		t.Errorf("Expected 1 denied connection, got %d", snapshot["connections_denied"])
+	}
+}

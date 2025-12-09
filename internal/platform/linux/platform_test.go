@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"firewall/internal/rules"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
 )
 
 func TestApplyRule_CommandGeneration(t *testing.T) {

@@ -3,9 +3,9 @@ package app
 import (
 	"fmt"
 
-	"firewall/internal/logging"
-	"firewall/internal/platform"
-	"firewall/internal/rules"
+	"github.com/vhPedroGitHub/firewall/internal/logging"
+	"github.com/vhPedroGitHub/firewall/internal/platform"
+	"github.com/vhPedroGitHub/firewall/internal/rules"
 )
 
 // Service centralizes core operations shared by CLI and GUI.
