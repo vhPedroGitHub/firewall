@@ -243,3 +243,26 @@ func (a *AppService) ClearStats() error {
 	stats.Clear()
 	return nil
 }
+
+// UpdateTrafficPermissions updates upload/download permissions for an application.
+func (a *AppService) UpdateTrafficPermissions(appPath string, allowUpload, allowDownload bool) error {
+	if a.monitorSvc == nil {
+		return fmt.Errorf("monitor service not initialized")
+	}
+	return a.monitorSvc.UpdateRuleTrafficPermissions(appPath, allowUpload, allowDownload)
+}
+
+// GetTrafficPermissions returns current upload/download permissions for an application.
+func (a *AppService) GetTrafficPermissions(appPath string) (map[string]bool, error) {
+	if a.monitorSvc == nil {
+		return nil, fmt.Errorf("monitor service not initialized")
+	}
+	allowUpload, allowDownload, err := a.monitorSvc.GetRulePermissions(appPath)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]bool{
+		"allowUpload":   allowUpload,
+		"allowDownload": allowDownload,
+	}, nil
+}

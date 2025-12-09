@@ -16,6 +16,8 @@ export function ClearActiveProcesses():Promise<void>;
 
 export function ClearMonitoringEvents():Promise<void>;
 
+export function ClearProcessTraffic():Promise<void>;
+
 export function CreateProfile(arg1:profiles.Profile):Promise<void>;
 
 export function DisablePrompts():Promise<void>;
@@ -29,6 +31,8 @@ export function GetLogs(arg1:string):Promise<Array<logging.Event>>;
 export function GetMonitoringEvents():Promise<Array<monitor.ConnectionEventLog>>;
 
 export function GetMonitoringStatus():Promise<boolean>;
+
+export function GetProcessTraffic():Promise<Array<monitor.ProcessTraffic>>;
 
 export function GetStats():Promise<Record<string, number>>;
 

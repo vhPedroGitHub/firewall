@@ -22,6 +22,10 @@ export function ClearMonitoringEvents() {
   return window['go']['main']['AppService']['ClearMonitoringEvents']();
 }
 
+export function ClearProcessTraffic() {
+  return window['go']['main']['AppService']['ClearProcessTraffic']();
+}
+
 export function CreateProfile(arg1) {
   return window['go']['main']['AppService']['CreateProfile'](arg1);
 }
@@ -48,6 +52,10 @@ export function GetMonitoringEvents() {
 
 export function GetMonitoringStatus() {
   return window['go']['main']['AppService']['GetMonitoringStatus']();
+}
+
+export function GetProcessTraffic() {
+  return window['go']['main']['AppService']['GetProcessTraffic']();
 }
 
 export function GetStats() {

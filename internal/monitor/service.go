@@ -110,9 +110,11 @@ func (s *Service) processEvents(events <-chan ConnectionEvent) {
 		s.activeProcesses[event.AppPath] = event
 		s.processesMu.Unlock()
 
-		// Track traffic (simplified - using estimated bytes)
-		bytesTransferred := int64(1024) // placeholder estimate
-		s.trackTraffic(event, bytesTransferred)
+		// Track traffic with varying estimates based on connection type
+		// HTTP/HTTPS typically have more download than upload
+		bytesOut := estimateOutboundBytes(event)
+		bytesIn := estimateInboundBytes(event)
+		s.trackTrafficBidirectional(event, bytesOut, bytesIn)
 
 		// Record in stats module
 		if event.AppPath != "" {
@@ -130,8 +132,8 @@ func (s *Service) processEvents(events <-chan ConnectionEvent) {
 				Application: event.AppPath,
 				Protocol:    event.Protocol,
 				Direction:   event.Direction,
-				BytesSent:   bytesTransferred / 2,
-				BytesRecv:   bytesTransferred / 2,
+				BytesSent:   bytesOut,
+				BytesRecv:   bytesIn,
 				Action:      action,
 			})
 		}
@@ -312,4 +314,157 @@ func (s *Service) ClearProcessTraffic() {
 	s.trafficMu.Lock()
 	defer s.trafficMu.Unlock()
 	s.processTraffic = make(map[string]*ProcessTraffic)
+}
+
+// trackTrafficBidirectional updates traffic with separate upload/download estimates.
+func (s *Service) trackTrafficBidirectional(event ConnectionEvent, bytesOut, bytesIn int64) {
+	s.trafficMu.Lock()
+	defer s.trafficMu.Unlock()
+
+	traffic, exists := s.processTraffic[event.AppPath]
+	if !exists {
+		traffic = &ProcessTraffic{
+			AppPath:  event.AppPath,
+			LastSeen: time.Now(),
+		}
+		s.processTraffic[event.AppPath] = traffic
+	}
+
+	traffic.Connections++
+	traffic.LastSeen = time.Now()
+	traffic.BytesSent += bytesOut
+	traffic.BytesReceived += bytesIn
+}
+
+// estimateOutboundBytes estimates upload traffic based on connection characteristics.
+func estimateOutboundBytes(event ConnectionEvent) int64 {
+	// HTTP/HTTPS requests: small upload (request headers)
+	if event.DstPort == 80 || event.DstPort == 443 {
+		return 512 // Small request
+	}
+	// DNS queries
+	if event.DstPort == 53 {
+		return 128
+	}
+	// Other services: moderate upload
+	return 1024
+}
+
+// estimateInboundBytes estimates download traffic based on connection characteristics.
+func estimateInboundBytes(event ConnectionEvent) int64 {
+	// HTTP/HTTPS responses: larger download (content)
+	if event.DstPort == 80 || event.DstPort == 443 {
+		return 4096 // Typical response with content
+	}
+	// DNS responses
+	if event.DstPort == 53 {
+		return 256
+	}
+	// FTP data transfer
+	if event.DstPort == 21 || event.DstPort == 20 {
+		return 8192
+	}
+	// Other services: moderate download
+	return 2048
+}
+
+// UpdateRuleTrafficPermissions creates or updates a rule to allow/deny upload/download for an app.
+func (s *Service) UpdateRuleTrafficPermissions(appPath string, allowUpload, allowDownload bool) error {
+	// Get existing rules for this app
+	rulesList, err := s.store.ListRules()
+	if err != nil {
+		return fmt.Errorf("failed to list rules: %w", err)
+	}
+
+	// Remove old auto-generated rules for this app
+	for _, rule := range rulesList {
+		if rule.Application == appPath && (rule.Name == fmt.Sprintf("auto_%s_outbound", sanitizeForRuleName(appPath)) ||
+			rule.Name == fmt.Sprintf("auto_%s_inbound", sanitizeForRuleName(appPath))) {
+			s.store.DeleteRule(rule.Name)
+		}
+	}
+
+	// Create outbound rule (upload)
+	if allowUpload {
+		outboundRule := rules.Rule{
+			Name:        fmt.Sprintf("auto_%s_outbound", sanitizeForRuleName(appPath)),
+			Application: appPath,
+			Action:      "allow",
+			Protocol:    "any",
+			Direction:   "outbound",
+			Ports:       []int{},
+		}
+		if err := s.store.SaveRule(outboundRule); err != nil {
+			return fmt.Errorf("failed to save outbound rule: %w", err)
+		}
+	} else {
+		outboundRule := rules.Rule{
+			Name:        fmt.Sprintf("auto_%s_outbound", sanitizeForRuleName(appPath)),
+			Application: appPath,
+			Action:      "deny",
+			Protocol:    "any",
+			Direction:   "outbound",
+			Ports:       []int{},
+		}
+		if err := s.store.SaveRule(outboundRule); err != nil {
+			return fmt.Errorf("failed to save outbound rule: %w", err)
+		}
+	}
+
+	// Create inbound rule (download)
+	if allowDownload {
+		inboundRule := rules.Rule{
+			Name:        fmt.Sprintf("auto_%s_inbound", sanitizeForRuleName(appPath)),
+			Application: appPath,
+			Action:      "allow",
+			Protocol:    "any",
+			Direction:   "inbound",
+			Ports:       []int{},
+		}
+		if err := s.store.SaveRule(inboundRule); err != nil {
+			return fmt.Errorf("failed to save inbound rule: %w", err)
+		}
+	} else {
+		inboundRule := rules.Rule{
+			Name:        fmt.Sprintf("auto_%s_inbound", sanitizeForRuleName(appPath)),
+			Application: appPath,
+			Action:      "deny",
+			Protocol:    "any",
+			Direction:   "inbound",
+			Ports:       []int{},
+		}
+		if err := s.store.SaveRule(inboundRule); err != nil {
+			return fmt.Errorf("failed to save inbound rule: %w", err)
+		}
+	}
+
+	logging.LogEvent("info", "traffic_permissions_updated",
+		fmt.Sprintf("Updated traffic permissions for %s: upload=%v, download=%v", appPath, allowUpload, allowDownload),
+		nil)
+
+	return nil
+}
+
+// GetRulePermissions returns the current upload/download permissions for an app.
+func (s *Service) GetRulePermissions(appPath string) (allowUpload, allowDownload bool, err error) {
+	rulesList, err := s.store.ListRules()
+	if err != nil {
+		return false, false, fmt.Errorf("failed to list rules: %w", err)
+	}
+
+	// Default to allow if no rules exist
+	allowUpload = true
+	allowDownload = true
+
+	for _, rule := range rulesList {
+		if rule.Application == appPath {
+			if rule.Direction == "outbound" {
+				allowUpload = (rule.Action == "allow")
+			} else if rule.Direction == "inbound" {
+				allowDownload = (rule.Action == "allow")
+			}
+		}
+	}
+
+	return allowUpload, allowDownload, nil
 }

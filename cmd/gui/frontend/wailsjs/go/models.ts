@@ -46,12 +46,15 @@ export namespace monitor {
 	
 	export class ConnectionEvent {
 	    AppPath: string;
+	    PID: string;
 	    Protocol: string;
 	    Direction: string;
 	    SrcAddr: string;
 	    SrcPort: number;
 	    DstAddr: string;
 	    DstPort: number;
+	    State: string;
+	    Timestamp: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ConnectionEvent(source);
@@ -60,12 +63,15 @@ export namespace monitor {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.AppPath = source["AppPath"];
+	        this.PID = source["PID"];
 	        this.Protocol = source["Protocol"];
 	        this.Direction = source["Direction"];
 	        this.SrcAddr = source["SrcAddr"];
 	        this.SrcPort = source["SrcPort"];
 	        this.DstAddr = source["DstAddr"];
 	        this.DstPort = source["DstPort"];
+	        this.State = source["State"];
+	        this.Timestamp = source["Timestamp"];
 	    }
 	}
 	export class ConnectionEventLog {
@@ -85,6 +91,45 @@ export namespace monitor {
 	        this.Decision = source["Decision"];
 	        this.Timestamp = this.convertValues(source["Timestamp"], null);
 	        this.RuleName = source["RuleName"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ProcessTraffic {
+	    AppPath: string;
+	    BytesReceived: number;
+	    BytesSent: number;
+	    Connections: number;
+	    // Go type: time
+	    LastSeen: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProcessTraffic(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.AppPath = source["AppPath"];
+	        this.BytesReceived = source["BytesReceived"];
+	        this.BytesSent = source["BytesSent"];
+	        this.Connections = source["Connections"];
+	        this.LastSeen = this.convertValues(source["LastSeen"], null);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
