@@ -1,0 +1,10 @@
+{
+  "db_path": "firewall.db",
+  "log_path": "firewall.log",
+  "default_profile": "",
+  "gui": {
+    "width": 1024,
+    "height": 768,
+    "theme": "dark"
+  }
+}

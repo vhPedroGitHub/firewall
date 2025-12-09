@@ -1,0 +1,52 @@
+{
+  "version": "",
+  "name": "firewall",
+  "assetdir": "./cmd/gui/frontend/dist",
+  "reloaddirs": "",
+  "build:dir": "",
+  "build:tags": "",
+  "frontend:dir": "./cmd/gui/frontend",
+  "frontend:install": "",
+  "frontend:build": "",
+  "frontend:dev": "",
+  "frontend:dev:build": "",
+  "frontend:dev:install": "",
+  "frontend:dev:watcher": "",
+  "frontend:dev:serverUrl": "",
+  "viteServerTimeout": 10,
+  "wailsjsdir": "./cmd/gui/frontend",
+  "outputfilename": "firewall-gui",
+  "debounceMS": 100,
+  "devServer": "",
+  "appargs": "",
+  "runNonNativeBuildHooks": false,
+  "preBuildHooks": {
+    "GOOS/GOARCH": "",
+    "GOOS/*": "",
+    "*/*": ""
+  },
+  "postBuildHooks": {
+    "GOOS/GOARCH": "",
+    "GOOS/*": "",
+    "*/*": ""
+  },
+  "info": {
+    "companyName": "Firewall Utility",
+    "productName": "Firewall Manager",
+    "productVersion": "1.0.0",
+    "copyright": "2025",
+    "comments": "Cross-platform firewall management utility"
+  },
+  "nsisType": "",
+  "obfuscated": false,
+  "garbleargs": "",
+  "bindings": {
+    "ts_generation": {
+      "prefix": "",
+      "suffix": "",
+      "outputType": "classes"
+    }
+  }
+}
+
+
